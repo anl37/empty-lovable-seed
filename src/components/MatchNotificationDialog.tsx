@@ -3,38 +3,47 @@ import { Button } from "@/components/ui/button";
 import { useMatchNotifications } from "@/hooks/useMatchNotifications";
 import { IcebreakerScreen } from "@/components/IcebreakerScreen";
 import { Sparkles } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getDurhamVenues } from "@/lib/durham-venues";
+
+interface MeetingDetails {
+  sharedEmojiCode: string;
+  venueName: string;
+  landmark: string;
+  meetCode: string;
+}
 
 export const MatchNotificationDialog = () => {
   const { newMatch, clearMatch } = useMatchNotifications();
   const [showIcebreaker, setShowIcebreaker] = useState(false);
-  const [sharedEmojiCode, setSharedEmojiCode] = useState("");
-  const [venueName, setVenueName] = useState("");
-  const [landmark, setLandmark] = useState("");
-  const [meetCode, setMeetCode] = useState("");
+  const [meetingDetails, setMeetingDetails] = useState<MeetingDetails | null>(null);
+  const lastMatchId = useRef<string | null>(null);
 
-  // Generate meeting details when match is created
+  // Generate meeting details only once per unique match
   useEffect(() => {
-    if (newMatch) {
+    if (newMatch && newMatch.matchId !== lastMatchId.current) {
+      lastMatchId.current = newMatch.matchId;
+      
       // Generate emoji codes
       const emojis = ["🐱", "☕", "🌿", "🪩", "🎨", "📚", "🎵", "🏃", "🧘", "🍕"];
       const userEmoji = emojis[Math.floor(Math.random() * emojis.length)];
       const matchEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-      setSharedEmojiCode(`${userEmoji}${matchEmoji}`);
       
       // Select venue and landmark
       const venues = getDurhamVenues();
       const venue = venues[Math.floor(Math.random() * Math.min(10, venues.length))];
-      setVenueName(venue.name);
       
+      let selectedLandmark = "";
       if (venue.landmarks && venue.landmarks.length > 0) {
-        const selectedLandmark = venue.landmarks[Math.floor(Math.random() * venue.landmarks.length)];
-        setLandmark(selectedLandmark);
+        selectedLandmark = venue.landmarks[Math.floor(Math.random() * venue.landmarks.length)];
       }
       
-      // Generate meet code
-      setMeetCode(`MEET${Math.floor(Math.random() * 10000)}`);
+      setMeetingDetails({
+        sharedEmojiCode: `${userEmoji}${matchEmoji}`,
+        venueName: venue.name,
+        landmark: selectedLandmark,
+        meetCode: `MEET${Math.floor(Math.random() * 10000)}`
+      });
     }
   }, [newMatch]);
 
@@ -42,7 +51,7 @@ export const MatchNotificationDialog = () => {
     setShowIcebreaker(true);
   };
 
-  if (!newMatch) return null;
+  if (!newMatch || !meetingDetails) return null;
 
   return (
     <>
@@ -84,12 +93,14 @@ export const MatchNotificationDialog = () => {
       onClose={() => {
         setShowIcebreaker(false);
         clearMatch();
+        lastMatchId.current = null;
+        setMeetingDetails(null);
       }}
       userName={newMatch.matchedUserName}
-      meetCode={meetCode}
-      sharedEmojiCode={sharedEmojiCode}
-      venueName={venueName}
-      landmark={landmark}
+      meetCode={meetingDetails.meetCode}
+      sharedEmojiCode={meetingDetails.sharedEmojiCode}
+      venueName={meetingDetails.venueName}
+      landmark={meetingDetails.landmark}
     />
   </>
   );
