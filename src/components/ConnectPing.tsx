@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { IcebreakerScreen } from "@/components/IcebreakerScreen";
-import { toast } from "@/hooks/use-toast";
-import { getDurhamVenues } from "@/lib/durham-venues";
+import { useNavigate } from "react-router-dom";
 
 interface ConnectPingProps {
   open: boolean;
@@ -18,6 +16,7 @@ interface ConnectPingProps {
 
 export const ConnectPing = ({ open, onOpenChange, userName, userId, meetCode, onSendRequest, onStartTalking }: ConnectPingProps) => {
   const [status, setStatus] = useState<'sending' | 'sent'>('sending');
+  const navigate = useNavigate();
 
   // Reset status when dialog closes
   const handleOpenChange = (newOpen: boolean) => {
@@ -43,6 +42,8 @@ export const ConnectPing = ({ open, onOpenChange, userName, userId, meetCode, on
     
     // Close dialog immediately after sending
     handleOpenChange(false);
+    // Navigate to home after closing
+    navigate("/");
   };
 
   return (

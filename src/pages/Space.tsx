@@ -17,6 +17,7 @@ import { findNearestVenue } from "@/lib/location-utils";
 import { getPlaceNameFromCoords } from "@/lib/geocoding-utils";
 import { DURHAM_RECS } from "@/config/city";
 import { useToast } from "@/hooks/use-toast";
+import { useConnectionRequest } from "@/hooks/useConnectionRequest";
 
 // Mock data
 const mockUsers = [
@@ -70,6 +71,7 @@ const Space = () => {
   const [currentTime, setCurrentTime] = useState(getCurrentTime());
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [connectTargetUser, setConnectTargetUser] = useState<string>("");
+  const [connectTargetUserId, setConnectTargetUserId] = useState<string>("");
   const [directMeetCode, setDirectMeetCode] = useState('');
   const [directMeetingData, setDirectMeetingData] = useState<{
     sharedEmojiCode: string;
@@ -99,6 +101,7 @@ const Space = () => {
   });
   
   const { toast } = useToast();
+  const { sendConnectionRequest } = useConnectionRequest();
   
   // Convert nearbyUsers to display format
   const visibleUsers = nearbyUsers.map((user, index) => ({
@@ -118,7 +121,8 @@ const Space = () => {
   }));
 
 
-  const handleConnect = (userName: string) => {
+  const handleConnect = (userId: string, userName: string) => {
+    setConnectTargetUserId(userId);
     setConnectTargetUser(userName);
     const meetCode = `🐢-${Math.floor(Math.random() * 99)}`;
     setDirectMeetCode(meetCode);
@@ -393,6 +397,7 @@ const Space = () => {
         onOpenChange={setShowConnectDialog}
         userName={connectTargetUser}
         meetCode={directMeetCode}
+        onSendRequest={() => sendConnectionRequest(connectTargetUserId, connectTargetUser)}
         onStartTalking={handleStartTalkingDirect}
       />
 

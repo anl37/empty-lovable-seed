@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WeeklyPresence } from "@/components/WeeklyPresence";
-import { ConnectPing } from "@/components/ConnectPing";
-import { useConnectionRequest } from "@/hooks/useConnectionRequest";
+
+
 import { Sparkles, Clock, Users, MapPin } from "lucide-react";
 
 interface User {
@@ -26,30 +26,16 @@ interface User {
 interface UserCardProps {
   user: User;
   onSelect: () => void;
-  onConnect?: (userName: string) => void;
+  onConnect?: (userId: string, userName: string) => void;
 }
 
 export const UserCard = ({ user, onConnect }: UserCardProps) => {
   const [showProfile, setShowProfile] = useState(false);
-  const [showConnectPing, setShowConnectPing] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { sendConnectionRequest, isLoading } = useConnectionRequest();
 
-  const handleSendRequest = async () => {
-    if (isProcessing) return { success: false };
-    
-    setIsProcessing(true);
-    try {
-      const result = await sendConnectionRequest(user.id, user.name);
-      if (result.success) {
-        onConnect?.(user.name);
-        setShowConnectPing(false);
-      }
-      return result;
-    } finally {
-      setIsProcessing(false);
-    }
+  const openConnect = () => {
+    onConnect?.(user.id, user.name);
   };
+
 
   return (
     <>
@@ -120,11 +106,8 @@ export const UserCard = ({ user, onConnect }: UserCardProps) => {
         <Button
           onClick={(e) => {
             e.stopPropagation();
-            if (!showConnectPing && !isProcessing) {
-              setShowConnectPing(true);
-            }
+            openConnect();
           }}
-          disabled={isLoading || isProcessing}
           className="w-full mt-3 gradient-warm shadow-soft hover:shadow-glow transition-all"
         >
           Connect
@@ -189,13 +172,9 @@ export const UserCard = ({ user, onConnect }: UserCardProps) => {
             {/* Connect Button */}
             <Button
               onClick={() => {
-                if (!showConnectPing && !isProcessing) {
-                  setShowProfile(false);
-                  // Small delay to ensure profile closes first
-                  setTimeout(() => setShowConnectPing(true), 100);
-                }
+                setShowProfile(false);
+                openConnect();
               }}
-              disabled={isLoading || isProcessing}
               className="w-full gradient-warm shadow-soft hover:shadow-glow transition-all"
             >
               {`Connect with ${user.name}`}
@@ -204,14 +183,6 @@ export const UserCard = ({ user, onConnect }: UserCardProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Connect Ping Dialog */}
-      <ConnectPing
-        open={showConnectPing}
-        onOpenChange={setShowConnectPing}
-        userName={user.name}
-        userId={user.id}
-        onSendRequest={handleSendRequest}
-      />
     </>
   );
 };
