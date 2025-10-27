@@ -9,19 +9,28 @@ interface ConnectPingProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userName: string;
-  meetCode: string;
+  userId?: string;
+  meetCode?: string;
+  onSendRequest?: () => Promise<{ success: boolean; autoAccepted?: boolean }>;
   onStartTalking?: (data: { sharedEmojiCode: string; venueName: string; landmark: string }) => void;
 }
 
 
-export const ConnectPing = ({ open, onOpenChange, userName, meetCode, onStartTalking }: ConnectPingProps) => {
+export const ConnectPing = ({ open, onOpenChange, userName, userId, meetCode, onSendRequest, onStartTalking }: ConnectPingProps) => {
   const [status, setStatus] = useState<'sending' | 'sent' | 'icebreaker'>('sending');
   const [showIcebreaker, setShowIcebreaker] = useState(false);
   const [sharedEmojiCode, setSharedEmojiCode] = useState("");
   const [venueName, setVenueName] = useState("");
   const [landmark, setLandmark] = useState("");
 
-  const handleSend = () => {
+  const handleSend = async () => {
+    if (onSendRequest) {
+      const result = await onSendRequest();
+      if (!result.success) {
+        return;
+      }
+    }
+    
     setStatus('sent');
     
     // Generate emoji codes and venue

@@ -31,13 +31,15 @@ interface UserCardProps {
 
 export const UserCard = ({ user, onConnect }: UserCardProps) => {
   const [showProfile, setShowProfile] = useState(false);
+  const [showConnectPing, setShowConnectPing] = useState(false);
   const { sendConnectionRequest, isLoading } = useConnectionRequest();
 
-  const handleConnect = async () => {
+  const handleSendRequest = async () => {
     const result = await sendConnectionRequest(user.id, user.name);
     if (result.success) {
       onConnect?.(user.name);
     }
+    return result;
   };
 
   return (
@@ -109,12 +111,12 @@ export const UserCard = ({ user, onConnect }: UserCardProps) => {
         <Button
           onClick={(e) => {
             e.stopPropagation();
-            handleConnect();
+            setShowConnectPing(true);
           }}
           disabled={isLoading}
           className="w-full mt-3 gradient-warm shadow-soft hover:shadow-glow transition-all"
         >
-          {isLoading ? 'Connecting...' : 'Connect'}
+          Connect
         </Button>
       </div>
 
@@ -177,16 +179,25 @@ export const UserCard = ({ user, onConnect }: UserCardProps) => {
             <Button
               onClick={() => {
                 setShowProfile(false);
-                handleConnect();
+                setShowConnectPing(true);
               }}
               disabled={isLoading}
               className="w-full gradient-warm shadow-soft hover:shadow-glow transition-all"
             >
-              {isLoading ? 'Connecting...' : `Connect with ${user.name}`}
+              {`Connect with ${user.name}`}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Connect Ping Dialog */}
+      <ConnectPing
+        open={showConnectPing}
+        onOpenChange={setShowConnectPing}
+        userName={user.name}
+        userId={user.id}
+        onSendRequest={handleSendRequest}
+      />
     </>
   );
 };
