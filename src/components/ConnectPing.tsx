@@ -19,30 +19,34 @@ interface ConnectPingProps {
 export const ConnectPing = ({ open, onOpenChange, userName, userId, meetCode, onSendRequest, onStartTalking }: ConnectPingProps) => {
   const [status, setStatus] = useState<'sending' | 'sent'>('sending');
 
+  // Reset status when dialog closes
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setStatus('sending');
+    }
+    onOpenChange(newOpen);
+  };
+
   const handleSend = async () => {
     if (onSendRequest) {
       const result = await onSendRequest();
       if (!result.success) {
+        handleOpenChange(false);
         return;
       }
-      // If auto-accepted, close the dialog
+      // If auto-accepted, close the dialog immediately
       if (result.autoAccepted) {
-        onOpenChange(false);
+        handleOpenChange(false);
         return;
       }
     }
     
-    // Show sent status and close after a brief moment
-    setStatus('sent');
-    setTimeout(() => {
-      onOpenChange(false);
-      // Reset status for next time
-      setStatus('sending');
-    }, 1500);
+    // Close dialog immediately after sending
+    handleOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
@@ -52,31 +56,15 @@ export const ConnectPing = ({ open, onOpenChange, userName, userId, meetCode, on
           </DialogHeader>
 
           <div className="space-y-4">
-            {status === 'sending' && (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Send a one-time ping to {userName}. They'll be notified and can choose to accept.
-                </p>
-                <Button onClick={handleSend} className="w-full gradient-warm shadow-soft rounded-full">
-                  Send Connect Ping
-                </Button>
-                <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full rounded-full">
-                  Cancel
-                </Button>
-              </>
-            )}
-
-            {status === 'sent' && (
-              <div className="text-center py-4">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/10 flex items-center justify-center text-3xl">
-                  ✓
-                </div>
-                <p className="text-sm font-medium mb-1">Request sent!</p>
-                <p className="text-xs text-muted-foreground">
-                  {userName} will be notified
-                </p>
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground">
+              Send a one-time ping to {userName}. They'll be notified and can choose to accept.
+            </p>
+            <Button onClick={handleSend} disabled={status === 'sent'} className="w-full gradient-warm shadow-soft rounded-full">
+              {status === 'sent' ? 'Sending...' : 'Send Connect Ping'}
+            </Button>
+            <Button variant="outline" onClick={() => handleOpenChange(false)} className="w-full rounded-full">
+              Cancel
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
