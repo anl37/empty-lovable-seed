@@ -17,11 +17,7 @@ interface ConnectPingProps {
 
 
 export const ConnectPing = ({ open, onOpenChange, userName, userId, meetCode, onSendRequest, onStartTalking }: ConnectPingProps) => {
-  const [status, setStatus] = useState<'sending' | 'sent' | 'icebreaker'>('sending');
-  const [showIcebreaker, setShowIcebreaker] = useState(false);
-  const [sharedEmojiCode, setSharedEmojiCode] = useState("");
-  const [venueName, setVenueName] = useState("");
-  const [landmark, setLandmark] = useState("");
+  const [status, setStatus] = useState<'sending' | 'sent'>('sending');
 
   const handleSend = async () => {
     if (onSendRequest) {
@@ -29,46 +25,24 @@ export const ConnectPing = ({ open, onOpenChange, userName, userId, meetCode, on
       if (!result.success) {
         return;
       }
+      // If auto-accepted, close the dialog
+      if (result.autoAccepted) {
+        onOpenChange(false);
+        return;
+      }
     }
     
+    // Show sent status and close after a brief moment
     setStatus('sent');
-    
-    // Generate emoji codes and venue
-    const emojis = ["🐱", "☕", "🌿", "🪩", "🎨", "📚", "🎵", "🏃", "🧘", "🍕"];
-    const userEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-    const matchEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-    const emojiCode = `${userEmoji}${matchEmoji}`;
-    setSharedEmojiCode(emojiCode);
-    
-    // Select venue and landmark
-    const venues = getDurhamVenues();
-    const venue = venues[Math.floor(Math.random() * Math.min(10, venues.length))];
-    setVenueName(venue.name);
-    
-    if (venue.landmarks && venue.landmarks.length > 0) {
-      const selectedLandmark = venue.landmarks[Math.floor(Math.random() * venue.landmarks.length)];
-      setLandmark(selectedLandmark);
-    }
-    
-    // Simulate response after 2 seconds
     setTimeout(() => {
-      setStatus('icebreaker');
-      setShowIcebreaker(true);
-      onOpenChange(false); // Close the connect dialog
-      toast({
-        title: "🎉 Connection accepted!",
-        description: `${userName} wants to meet at ${venue.name}`,
-      });
-    }, 2000);
-  };
-
-  const handleStartTalking = () => {
-    onStartTalking?.({ sharedEmojiCode, venueName, landmark });
+      onOpenChange(false);
+      // Reset status for next time
+      setStatus('sending');
+    }, 1500);
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
@@ -94,28 +68,17 @@ export const ConnectPing = ({ open, onOpenChange, userName, userId, meetCode, on
 
             {status === 'sent' && (
               <div className="text-center py-4">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/10 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/10 flex items-center justify-center text-3xl">
+                  ✓
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Waiting for {userName} to respond...
+                <p className="text-sm font-medium mb-1">Request sent!</p>
+                <p className="text-xs text-muted-foreground">
+                  {userName} will be notified
                 </p>
               </div>
             )}
           </div>
         </DialogContent>
       </Dialog>
-
-      <IcebreakerScreen
-        open={showIcebreaker}
-        onClose={() => setShowIcebreaker(false)}
-        userName={userName}
-        meetCode={meetCode}
-        sharedEmojiCode={sharedEmojiCode}
-        venueName={venueName}
-        landmark={landmark}
-        onStartTalking={handleStartTalking}
-      />
-    </>
   );
 };
