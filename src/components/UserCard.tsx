@@ -32,14 +32,23 @@ interface UserCardProps {
 export const UserCard = ({ user, onConnect }: UserCardProps) => {
   const [showProfile, setShowProfile] = useState(false);
   const [showConnectPing, setShowConnectPing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { sendConnectionRequest, isLoading } = useConnectionRequest();
 
   const handleSendRequest = async () => {
-    const result = await sendConnectionRequest(user.id, user.name);
-    if (result.success) {
-      onConnect?.(user.name);
+    if (isProcessing) return { success: false };
+    
+    setIsProcessing(true);
+    try {
+      const result = await sendConnectionRequest(user.id, user.name);
+      if (result.success) {
+        onConnect?.(user.name);
+        setShowConnectPing(false);
+      }
+      return result;
+    } finally {
+      setIsProcessing(false);
     }
-    return result;
   };
 
   return (
@@ -111,9 +120,11 @@ export const UserCard = ({ user, onConnect }: UserCardProps) => {
         <Button
           onClick={(e) => {
             e.stopPropagation();
-            setShowConnectPing(true);
+            if (!showConnectPing && !isProcessing) {
+              setShowConnectPing(true);
+            }
           }}
-          disabled={isLoading}
+          disabled={isLoading || isProcessing}
           className="w-full mt-3 gradient-warm shadow-soft hover:shadow-glow transition-all"
         >
           Connect
@@ -178,10 +189,13 @@ export const UserCard = ({ user, onConnect }: UserCardProps) => {
             {/* Connect Button */}
             <Button
               onClick={() => {
-                setShowProfile(false);
-                setShowConnectPing(true);
+                if (!showConnectPing && !isProcessing) {
+                  setShowProfile(false);
+                  // Small delay to ensure profile closes first
+                  setTimeout(() => setShowConnectPing(true), 100);
+                }
               }}
-              disabled={isLoading}
+              disabled={isLoading || isProcessing}
               className="w-full gradient-warm shadow-soft hover:shadow-glow transition-all"
             >
               {`Connect with ${user.name}`}
